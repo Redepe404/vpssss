@@ -1,0 +1,56 @@
+name: VPS-UNLIMITED-ROOT
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */6 * * *"
+
+jobs:
+  vps-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Kill Standard Environment
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc
+
+      - name: Setup SSH & Root Access
+        run: |
+          echo "root:12345678" | sudo chpasswd
+          sudo sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+          sudo sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+          sudo systemctl restart ssh
+
+      - name: Install Ngrok
+        run: |
+          curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+          echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
+          sudo apt update
+          sudo apt install ngrok -y
+
+      - name: Ngrok Auth & Start TCP SSH
+        run: |
+          ngrok config add-authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
+          nohup ngrok tcp 22 --log=stdout > ngrok.log &
+          sleep 5
+          curl -s http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[0].public_url' > ngrok_url.txt
+          echo "NGROK_URL=$(cat ngrok_url.txt)" >> $GITHUB_ENV
+
+      - name: Banner Info
+        run: |
+          echo "======================================"
+          echo "VPS ROOT SIAP (NGROK)"
+          echo "HOST : ${{ env.NGROK_URL }}"
+          echo "USER : root"
+          echo "PASS : 12345678"
+          echo "======================================"
+          echo "Contoh koneksi:"
+          echo "ssh root@<host> -p <port>"
+
+      - name: Unlimited Keep Alive
+        run: |
+          while true; do
+            echo "VPS Still Active: $(date)"
+            sleep 60
+          done
