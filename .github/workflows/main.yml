@@ -19,7 +19,7 @@ jobs:
       - name: Setup SSH & Root Access
         run: |
           # Set password root langsung
-          echo "root:12345678" | sudo chpasswd
+          echo "root:pler" | sudo chpasswd
           
           # Konfigurasi SSH agar bisa login root
           sudo sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
@@ -48,7 +48,7 @@ jobs:
           echo "VPS ROOT SUDAH SIAP!"
           echo "IP ADDRESS : ${{ env.IP_ADDRESS }}"
           echo "USER       : root"
-          echo "PASS       : 12345678"
+          echo "PASS       : pler"
           echo "PORT       : 22"
           echo "===================================================="
           echo "Koneksi via terminal: ssh root@${{ env.IP_ADDRESS }}"
